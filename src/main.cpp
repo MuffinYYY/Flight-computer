@@ -27,6 +27,8 @@ int buzzer = 6;
 
 double baseline;
 
+StaticJsonDocument<200> doc;
+
 double led (int color) {
   //For turning off LED
   if(color==0){  
@@ -53,7 +55,8 @@ double led (int color) {
     pixels.setPixelColor(i, pixels.Color(150, 0, 0));
     pixels.show();  
     }  
-  }  
+  } 
+  return 0;
 }
 
 int voltage(int delayTime){
@@ -78,15 +81,16 @@ float voltage = 0.0;
     // voltage multiplied by 11 when using voltage divider that
     // divides by 11. 11.132 is the calibrated voltage divide
     // value
-    Serial.print("Current battery voltage: ");
-    Serial.print(voltage * 11.132);
-    Serial.print (" V,");
+    doc["voltage"]=voltage * 11.132;
+    serializeJson(doc, Serial);
+
     sample_count = 0;
     sum = 0;
+    return 0;
 }
 
 void gyro() {
-    timer = millis();
+  timer = millis();
 
   // Read normalized values
   Vector norm = mpu.readNormalizeGyro();
@@ -97,12 +101,10 @@ void gyro() {
   yaw = yaw + norm.ZAxis * timeStep;
 
   // Output raw
-  Serial.print(" Pitch = ");
-  Serial.print(pitch);
-  Serial.print(", Roll = ");
-  Serial.print(roll);  
-  Serial.print(", Yaw = ");
-  Serial.println(yaw);
+
+  doc["pitch"]=pitch;
+  doc["yaw"]=yaw;
+  doc["roll"]=roll;
 
   // Wait to full timeStep period
   delay((timeStep*1000) - (millis() - timer));
@@ -112,7 +114,7 @@ void gyro() {
 double getPressure()
 {
   char status;//Curent status
-  double T,P,p0,a;//Variables for determining pressure
+  double T,P;//Variables for determining pressure
 
   // You must first get a temperature measurement to perform a pressure reading
  
@@ -158,6 +160,7 @@ double getPressure()
       }
     }
   }
+  return 0; //Exit condition
 }
 
 void get_altitude(){
@@ -171,11 +174,9 @@ void get_altitude(){
   // the new reading and the baseline reading:
 
   a = pressure.altitude(P,baseline);
-  
-  Serial.print(",Relative altitude: ");
-  if (a >= 0.0) Serial.print(" "); // add a space for positive numbers
-  Serial.print(a,1);
-  Serial.print(" meters, ");
+
+  doc["altitude"]=a;
+  Serial.println();
   
   delay(1);
 }
@@ -235,8 +236,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("Time= ");
-  Serial.print(millis());
   get_altitude();
   led(2);
   voltage(1);
